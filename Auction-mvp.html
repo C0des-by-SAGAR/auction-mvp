@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+        .auction-item {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+        }
+        .bid-button {
+            margin-top: 10px;
+        }
+        .login-form, .register-form {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">Auction Platform</h1>
+
+        <!-- User Authentication -->
+        <div class="login-form" id="login-section">
+            <h4>Login</h4>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+
+        <!-- Auction Item Section -->
+        <div id="auction-section" style="display: none;">
+            <div class="auction-item">
+                <h4 id="item-name">Loading...</h4>
+                <p>Starting Bid: $<span id="starting-bid">0</span></p>
+                <p>Current Bid: $<span id="current-bid">0</span></p>
+
+                <form id="bid-form" class="row g-3">
+                    <div class="col-md-8">
+                        <input type="number" class="form-control" id="bid-amount" placeholder="Enter your bid" required>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary bid-button">Place Bid</button>
+                    </div>
+                </form>
+                <p id="bid-message" class="text-success mt-3" style="display: none;">Your bid has been placed!</p>
+            </div>
+
+            <!-- Upcoming Auctions -->
+            <h2 class="mt-5">Upcoming Auctions</h2>
+            <ul id="upcoming-auctions">
+                <!-- Upcoming auctions will be loaded here dynamically -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simulate backend data
+        const auctionData = {
+            currentItem: {
+                name: "Antique Vase",
+                startingBid: 100,
+                currentBid: 150,
+            },
+            upcomingItems: [
+                { name: "Vintage Car", startingBid: 10000 },
+                { name: "Rare Comic Book", startingBid: 500 },
+                { name: "Designer Watch", startingBid: 2000 },
+            ],
+        };
+
+        // Socket.IO setup (mocked for MVP)
+        const socket = io();
+
+        // Login simulation
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('auction-section').style.display = 'block';
+            loadAuctionData();
+        });
+
+        // Load auction data dynamically
+        function loadAuctionData() {
+            const currentItem = auctionData.currentItem;
+            document.getElementById('item-name').textContent = currentItem.name;
+            document.getElementById('starting-bid').textContent = currentItem.startingBid;
+            document.getElementById('current-bid').textContent = currentItem.currentBid;
+
+            const upcomingList = document.getElementById('upcoming-auctions');
+            auctionData.upcomingItems.forEach(item => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${item.name} - Starting at $${item.startingBid}`;
+                upcomingList.appendChild(listItem);
+            });
+        }
+
+        // Real-time bidding simulation
+        document.getElementById('bid-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const bidAmount = parseFloat(document.getElementById('bid-amount').value);
+            const currentBid = parseFloat(document.getElementById('current-bid').textContent);
+
+            if (bidAmount > currentBid) {
+                document.getElementById('current-bid').textContent = bidAmount.toFixed(2);
+                document.getElementById('bid-message').style.display = 'block';
+                setTimeout(() => document.getElementById('bid-message').style.display = 'none', 3000);
+
+                // Emit bid update to server
+                socket.emit('new-bid', bidAmount);
+            } else {
+                alert('Your bid must be higher than the current bid.');
+            }
+
+            document.getElementById('bid-form').reset();
+        });
+
+        // Listen for real-time updates (mocked for now)
+        socket.on('update-bid', (newBid) => {
+            document.getElementById('current-bid').textContent = newBid;
+        });
+    </script>
+</body>
+</html>
